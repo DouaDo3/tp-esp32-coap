@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart IoT - Tableau de bord</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #edf4ff, #f7f9fc);
+      color: #1e293b;
+    }
+
+    header {
+      background: #fff;
+      padding: 22px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      box-shadow: 0 3px 18px #1e293b0c;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 23px; font-weight: 800; color: #172554; }
+    .brand-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px;
+                  background: #e0edff; font-size: 25px; }
+    .brand span { color: #2563eb; }
+
+    .connection { display: flex; align-items: center; gap: 9px; background: #f1f5f9; border: 1px solid #e2e8f0;
+                  border-radius: 30px; padding: 10px 16px; font-size: 13px; color: #475569; }
+    .dot { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; background: #f59e0b; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 45px 24px; }
+
+    .welcome { margin-bottom: 32px; }
+    .eyebrow { color: #2563eb; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+               font-size: 12px; margin-bottom: 10px; }
+    h1 { font-size: clamp(27px, 4vw, 38px); color: #172554; margin-bottom: 12px; }
+    .subtitle { color: #64748b; font-size: 15px; line-height: 1.7; }
+
+    /* Une carte par ESP32 */
+    .boards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+
+    .board {
+      position: relative; overflow: hidden; background: #fff; border: 1px solid #e6edf5; border-radius: 22px;
+      padding: 26px; box-shadow: 0 12px 30px #243b530d; transition: transform .2s, box-shadow .2s;
+    }
+    .board:hover { transform: translateY(-4px); box-shadow: 0 18px 38px #243b5317; }
+    .board::after { content: ""; position: absolute; right: -35px; top: -40px; width: 125px; height: 125px;
+                    border-radius: 50%; opacity: .55; pointer-events: none; background: #dbeafe; }
+    .board.offline { opacity: .65; }
+
+    .board-top { position: relative; z-index: 1; display: flex; align-items: flex-start;
+                 justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .board-name { font-size: 18px; font-weight: 800; color: #172554; word-break: break-all; }
+    .board-sub { color: #94a3b8; font-size: 12px; margin-top: 3px; }
+
+    .badge { flex-shrink: 0; font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 20px; }
+    .badge.on { background: #dcfce7; color: #15803d; }
+    .badge.off { background: #fee2e2; color: #b91c1c; }
+
+    .values { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tile { border: 1px solid #eef2f7; border-radius: 16px; padding: 14px; }
+    .tile .label { color: #64748b; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; }
+    .tile .value { margin-top: 8px; font-size: clamp(24px, 3.4vw, 32px); font-weight: 800; letter-spacing: -1px; }
+    .tile .unit { font-size: 16px; font-weight: 600; }
+    .tile.temperature { background: #fff7ed; } .tile.temperature .value { color: #ea580c; }
+    .tile.humidity    { background: #eff6ff; } .tile.humidity .value { color: #2563eb; }
+    .tile.other .value { color: #334155; }
+    .flash { animation: flash .9s ease-out; }
+    @keyframes flash { from { box-shadow: 0 0 0 3px #93c5fd; } to { box-shadow: 0 0 0 0 transparent; } }
+
+    .actuator { position: relative; z-index: 1; margin-top: 18px; padding: 14px; border-radius: 16px;
+                background: #f8fafc; display: flex; align-items: center; justify-content: space-between;
+                gap: 12px; flex-wrap: wrap; }
+    .actuator-state { font-size: 14px; font-weight: 700; color: #334155; }
+    .actuator-state b.on { color: #15803d; } .actuator-state b.off { color: #64748b; }
+    .buttons { display: flex; gap: 8px; }
+    button { border: 0; border-radius: 12px; padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 700;
+             cursor: pointer; transition: transform .1s, opacity .2s; }
+    button:active { transform: scale(.96); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-on { background: #2563eb; color: #fff; }
+    .btn-off { background: #e2e8f0; color: #1e293b; }
+
+    .description { position: relative; z-index: 1; color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9;
+                   margin-top: 16px; padding-top: 14px; }
+
+    .empty { grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 20px; background: #fff;
+             border: 1px dashed #cbd5e1; border-radius: 22px; }
+
+    .system { margin-top: 25px; padding: 23px 25px; background: #172554; color: white; border-radius: 20px;
+              display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap;
+              box-shadow: 0 10px 25px #17255418; }
+    .system h2 { font-size: 16px; margin-bottom: 7px; }
+    .system p { color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+    .last-update { background: #263866; padding: 11px 14px; border-radius: 12px; font-size: 12px; color: #e2e8f0; }
+
+    footer { text-align: center; padding: 25px 15px; color: #94a3b8; font-size: 12px; }
+
+    @media (max-width: 650px) {
+      header { padding: 18px 20px; }
+      main { padding: 32px 16px; }
+      .boards { grid-template-columns: 1fr; }
+      .board { padding: 22px; }
+      .system { align-items: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-icon">📡</div>
+      <div>Smart <span>IoT</span></div>
+    </div>
+    <div class="connection">
+      <span class="dot" id="dot"></span>
+      <span id="status">Connexion à Node-RED...</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="welcome">
+      <div class="eyebrow">Surveillance en temps réel</div>
+      <h1>Tableau de bord</h1>
+      <p class="subtitle">
+        Mesures envoyées par chaque carte ESP32 (MQTT → Node-RED → WebSocket)
+        et commande de leur actionneur depuis cette page.
+      </p>
+    </section>
+
+    <section class="boards" id="boards">
+      <div class="empty" id="empty">En attente des cartes ESP32…</div>
+    </section>
+
+    <section class="system">
+      <div>
+        <h2>État du système</h2>
+        <p id="summary">Aucune carte connectée pour l'instant.</p>
+      </div>
+      <div class="last-update" id="updated">Dernière réception : --</div>
+    </section>
+  </main>
+
+  <footer>Projet IoT — ESP32 · MQTT · Node-RED · WebSocket · MongoDB Atlas</footer>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const dot = document.getElementById("dot");
+    const boardsEl = document.getElementById("boards");
+    const emptyEl = document.getElementById("empty");
+    const summaryEl = document.getElementById("summary");
+    const updated = document.getElementById("updated");
+
+    // Etat connu de chaque carte : { mesure, etat, actionneur, ts }
+    const cartes = {};
+
+    // Affichage des grandeurs connues ; les autres s'affichent avec leur nom
+    const GRANDEURS = {
+      temperature: { label: "TEMPÉRATURE", unit: "°C", cls: "temperature" },
+      humidity:    { label: "HUMIDITÉ",    unit: "%",  cls: "humidity" },
+      humidite:    { label: "HUMIDITÉ",    unit: "%",  cls: "humidity" },
+      pressure:    { label: "PRESSION",    unit: "hPa", cls: "other" },
+      motion:      { label: "MOUVEMENT",   unit: "",   cls: "other", texte: v => (v ? "Oui" : "Non") },
+    };
+    const IGNORER = new Set(["seq", "ok"]);
+
+    // Port USB de chaque carte sur le PC (pour savoir laquelle est laquelle)
+    // Facultatif : nom affiche devant l'identifiant, ex. "esp32-39880c": "COM4" (voir le README)
+    const PORTS = {
+    };
+
+    let ws = null;
+    let retryTimer = null;
+    let reconnectDelay = 2000;
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    function blocCarte(id) {
+      let el = document.getElementById("carte-" + id);
+      if (!el) {
+        el = document.createElement("article");
+        el.className = "board";
+        el.id = "carte-" + id;
+        boardsEl.appendChild(el);
+      }
+      return el;
+    }
+
+    function afficher(id, flash) {
+      const c = cartes[id];
+      const m = c.mesure || {};
+      const enLigne = c.etat ? c.etat.state === "online" : !!c.mesure;
+      const unites = m.units || {};
+
+      const tuiles = Object.entries(m)
+        .filter(([k, v]) => typeof v === "number" && !IGNORER.has(k))
+        .map(([k, v]) => {
+          const g = GRANDEURS[k] || { label: k.toUpperCase(), unit: unites[k] || "", cls: "other" };
+          const texte = g.texte ? g.texte(v) : (Number.isInteger(v) ? v : v.toFixed(1));
+          return `<div class="tile ${g.cls}"><div class="label">${esc(g.label)}</div>
+                  <div class="value">${esc(texte)} <span class="unit">${esc(g.unit)}</span></div></div>`;
+        }).join("") || `<div class="tile other"><div class="label">MESURES</div><div class="value">--</div></div>`;
+
+      const a = c.actionneur;
+      const nomAct = (a && a.actuator) || "Actionneur";
+      const etatAct = a ? (a.state === "on" ? '<b class="on">ON</b>' : '<b class="off">OFF</b>') : "inconnu";
+      const desactive = enLigne ? "" : "disabled";
+
+      const infos = [
+        m.sensor || (c.etat && c.etat.sensor),
+        c.etat && c.etat.ip,
+        c.etat && c.etat.mesh_level ? (c.etat.mesh_level === 1 ? "racine du mesh" : "mesh niveau " + c.etat.mesh_level) : null,
+      ].filter(Boolean).map(esc).join(" · ");
+
+      const el = blocCarte(id);
+      el.classList.toggle("offline", !enLigne);
+      el.innerHTML = `
+        <div class="board-top">
+          <div><div class="board-name">${PORTS[id] ? esc(PORTS[id]) + " · " : ""}${esc(id.toUpperCase())}</div><div class="board-sub">${infos || "&nbsp;"}</div></div>
+          <span class="badge ${enLigne ? "on" : "off"}">${enLigne ? "En ligne" : "Hors ligne"}</span>
+        </div>
+        <div class="values">${tuiles}</div>
+        <div class="actuator">
+          <span class="actuator-state">💡 ${esc(nomAct)} : ${etatAct}</span>
+          <span class="buttons">
+            <button class="btn-on" ${desactive} onclick="commander('${esc(id)}', 'on')">Allumer</button>
+            <button class="btn-off" ${desactive} onclick="commander('${esc(id)}', 'off')">Éteindre</button>
+          </span>
+        </div>
+        <p class="description">Dernière mesure : ${c.ts ? new Date(c.ts).toLocaleTimeString() : "--"}${m.seq !== undefined ? " · n°" + esc(m.seq) : ""}</p>`;
+      if (flash) el.querySelectorAll(".tile").forEach(t => t.classList.add("flash"));
+      resume();
+    }
+
+    function resume() {
+      const ids = Object.keys(cartes);
+      emptyEl.style.display = ids.length ? "none" : "";
+      const enLigne = ids.filter(id => (cartes[id].etat ? cartes[id].etat.state === "online" : !!cartes[id].mesure)).length;
+      summaryEl.textContent = ids.length
+        ? `${ids.length} carte(s) connue(s), ${enLigne} en ligne.`
+        : "Aucune carte connectée pour l'instant.";
+    }
+
+    function retirer(id) {
+      delete cartes[id];
+      const el = document.getElementById("carte-" + id);
+      if (el) el.remove();
+      resume();
+    }
+
+    // 2e sens : page -> WebSocket -> Node-RED -> MQTT tp/<carte>/cmd -> ESP32
+    function commander(id, state) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "cmd", device_id: id, state: state }));
+      }
+    }
+
+    function recevoir(msg) {
+      const id = msg.device_id;
+      if (msg.type === "snapshot") {
+        Object.values(msg.cartes || {}).forEach(c => {
+          cartes[c.device_id] = { mesure: c.mesure, etat: c.etat, actionneur: c.actionneur, ts: c.ts };
+          afficher(c.device_id, false);
+        });
+        return;
+      }
+      if (msg.type === "remove") { retirer(id); return; }
+
+      if (!msg.type && (msg.temperature !== undefined || msg.humidite !== undefined)) {
+        // Ancien format (noeud inject de test) : {"temperature":..,"humidite":..}
+        cartes["test-inject"] = Object.assign(cartes["test-inject"] || {}, { mesure: msg, ts: Date.now() });
+        afficher("test-inject", true);
+      } else if (msg.type === "data") {
+        cartes[id] = Object.assign(cartes[id] || {}, { mesure: msg.data, ts: msg.ts || Date.now() });
+        afficher(id, true);
+      } else if (msg.type === "status") {
+        cartes[id] = Object.assign(cartes[id] || {}, { etat: msg.data });
+        afficher(id, false);
+      } else if (msg.type === "actuator") {
+        cartes[id] = Object.assign(cartes[id] || {}, { actionneur: msg.data });
+        afficher(id, false);
+      } else {
+        return;
+      }
+      updated.textContent = "Dernière réception : " + new Date().toLocaleTimeString();
+    }
+
+    function connecterWebSocket() {
+      clearTimeout(retryTimer);
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+
+      statusEl.textContent = "Connexion à Node-RED...";
+      dot.style.background = "#f59e0b";
+
+      ws = new WebSocket(protocol + "//" + location.host + "/ws/nodered");
+
+      ws.onopen = () => {
+        statusEl.textContent = "Connecté à Node-RED";
+        dot.style.background = "#16a34a";
+        reconnectDelay = 2000;
+        ws.send(JSON.stringify({ type: "hello" }));   // Node-RED renvoie l'état connu des cartes
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          recevoir(JSON.parse(event.data));
+        } catch (error) {
+          console.error("Message WebSocket invalide :", error);
+        }
+      };
+
+      ws.onerror = () => {
+        statusEl.textContent = "Erreur de connexion";
+        dot.style.background = "#dc2626";
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = "Reconnexion en cours...";
+        dot.style.background = "#f59e0b";
+        retryTimer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 1.5, 10000);
+          connecterWebSocket();
+        }, reconnectDelay);
+      };
+    }
+
+    connecterWebSocket();
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+# Kit TP ESP32 : broker MQTT + Node-RED (page temps reel, MongoDB Atlas facultatif)
+# Lancer :  docker compose up -d        Arreter :  docker compose down
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    container_name: tp-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"          # les cartes ESP32 se connectent ici (192.168.137.1:1883)
+    volumes:
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+
+  nodered:
+    build: ./docker/nodered
+    image: tp-esp32-nodered:1.0
+    container_name: tp-nodered
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    ports:
+      - "1880:1880"          # http://localhost:1880 (editeur) et http://localhost:1880/page2
+    env_file:
+      - path: .env
+        required: false      # sans .env : tout marche, sauf l'enregistrement MongoDB
+    environment:
+      - TZ=Africa/Tunis
+    volumes:
+      - nodered_data:/data
+
+volumes:
+  mosquitto_data:
+  nodered_data:

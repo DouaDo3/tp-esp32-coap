@@ -1,0 +1,291 @@
+menu "TP CoAPS - Configuration"
+
+    menu "Wi-Fi"
+        config APP_WIFI_SSID
+            string "SSID du reseau Wi-Fi"
+            default "MonReseau"
+            help
+                Nom du reseau Wi-Fi commun a toutes les cartes ESP32.
+
+        config APP_WIFI_PASSWORD
+            string "Mot de passe Wi-Fi"
+            default "MonMotDePasse"
+
+        config APP_WIFI_MAX_BACKOFF_S
+            int "Delai max entre deux tentatives de reconnexion (s)"
+            range 1 60
+            default 10
+    endmenu
+
+    menu "Mesh-Lite"
+        config APP_MESH_ENABLE
+            bool "Relier les cartes en reseau maille ESP-Mesh-Lite"
+            depends on MESH_LITE_ENABLE
+            default y
+            help
+                La carte qui capte la box (APP_WIFI_SSID) devient la RACINE (niveau 1).
+                Les autres se connectent au point d'acces de la racine ou d'un autre
+                noeud (niveaux 2, 3...). Chaque noeud parent fait du NAT : un enfant
+                peut joindre la racine, pas l'inverse. Donc :
+                 - les enfants s'abonnent (Observe) a APP_MESH_DATA_PATH sur la racine
+                 - les enfants envoient leurs mesures a la racine par PUT
+                Nom / mot de passe du reseau mesh : menu "Bridge Configuration"
+                (BRIDGE_SOFTAP_SSID / PASSWORD), identifiant : MESH_LITE_ID.
+                Ces valeurs doivent etre IDENTIQUES sur toutes les cartes du mesh.
+
+        config APP_MESH_DATA_PATH
+            string "Ressource de la racine qui collecte les mesures du mesh"
+            depends on APP_MESH_ENABLE
+            default "/mesh/data"
+            help
+                PUT  : un enfant y depose sa derniere mesure (JSON de /sensor/data)
+                GET + Observe : mesures de tous les noeuds
+                {"root":"esp32-..","nodes":[{...},{...}]}
+
+        config APP_MESH_CHECK_INTERVAL_S
+            int "Intervalle de verification du niveau / de la racine (s)"
+            depends on APP_MESH_ENABLE
+            range 1 60
+            default 5
+    endmenu
+
+    menu "MQTT (vers Node-RED)"
+        config APP_MQTT_ENABLE
+            bool "Publier les mesures sur un broker MQTT"
+            default y
+
+        config APP_MQTT_BROKER_URI
+            string "Adresse du broker MQTT"
+            depends on APP_MQTT_ENABLE
+            default "mqtt://192.168.1.100:1883"
+            help
+                Mosquitto sur le PC : mqtt://<IP du PC sur le reseau de la box>:1883
+                (ipconfig sous Windows). Le PC et la box doivent etre sur le meme reseau.
+
+        config APP_MQTT_TOPIC_PREFIX
+            string "Prefixe des topics"
+            depends on APP_MQTT_ENABLE
+            default "tp"
+            help
+                Topics : <prefixe>/<id-carte>/data et <prefixe>/<id-carte>/status
+
+        config APP_MQTT_USERNAME
+            string "Utilisateur MQTT (vide = anonyme)"
+            depends on APP_MQTT_ENABLE
+            default ""
+
+        config APP_MQTT_PASSWORD
+            string "Mot de passe MQTT"
+            depends on APP_MQTT_ENABLE
+            default ""
+    endmenu
+
+    menu "Decouverte mDNS"
+        config APP_DEVICE_PREFIX
+            string "Prefixe du nom des cartes"
+            default "esp32"
+            help
+                Le nom unique de chaque carte vaut <prefixe>-<3 derniers octets MAC>,
+                par exemple esp32-a1b2c3. Il sert de hostname mDNS (esp32-a1b2c3.local)
+                et de nom d'instance du service _coaps._udp.
+
+        config APP_MDNS_SERVICE_TYPE
+            string "Type de service mDNS annonce et recherche"
+            default "_coaps"
+            help
+                Doit etre IDENTIQUE pour toute la classe (convention commune).
+                Le protocole est toujours _udp. Exemple : _coaps -> _coaps._udp.local
+
+        config APP_DISCOVERY_INTERVAL_S
+            int "Intervalle entre deux recherches mDNS (s)"
+            range 3 120
+            default 10
+
+        config APP_DISCOVERY_QUERY_TIMEOUT_MS
+            int "Duree d'ecoute des reponses a chaque recherche (ms)"
+            range 500 5000
+            default 3000
+
+        config APP_PEER_TIMEOUT_S
+            int "Delai sans reponse avant de considerer une carte partie (s)"
+            range 10 600
+            default 35
+            help
+                Une carte qui ne repond plus a la recherche mDNS pendant ce delai
+                est retiree de la liste des pairs. Doit etre superieur a
+                2 x l'intervalle de recherche.
+
+        config APP_STATIC_PEERS
+            string "Pairs fixes (cartes sans mDNS) : IP[:port] separes par des virgules"
+            default ""
+            help
+                Pour les cartes qui n'annoncent pas _coaps._udp en mDNS.
+                Exemple : "192.168.1.42,192.168.1.43:5684". Vide = mDNS uniquement.
+
+        config APP_MAX_PEERS
+            int "Nombre maximal de pairs memorises"
+            range 1 16
+            default 8
+    endmenu
+
+    menu "CoAPS / securite DTLS"
+        config APP_COAPS_PORT
+            int "Port UDP CoAPS (DTLS)"
+            default 5684
+
+        config APP_PSK_KEY
+            string "Cle pre-partagee (PSK) commune a toutes les cartes"
+            default "tp-coaps-cle-de-groupe-2026"
+            help
+                Secret partage par toutes les cartes de la classe (8 caracteres minimum).
+                Une carte avec une cle differente echoue au handshake DTLS :
+                elle ne peut ni lire ni envoyer de donnees.
+
+        config APP_PSK_HINT
+            string "Indice PSK (identity hint) envoye par le serveur"
+            default "tp-coaps"
+
+        config APP_PSK_REQUIRE_PREFIX
+            bool "N'accepter que les identites PSK commencant par <prefixe>-"
+            default n
+            help
+                Desactive par defaut pour etre compatible avec les cartes de la classe
+                utilisant un autre code : l'authentification repose sur la cle PSK,
+                qui doit etre identique. L'identite n'est alors que journalisee.
+    endmenu
+
+    menu "Observe"
+        config APP_OBSERVE_PATHS
+            string "Ressources observees chez les autres cartes (separees par des virgules)"
+            default "/sensor/data"
+            help
+                Convention commune de la classe. Exemple : /sensor/data
+                ou /sensor/temperature,/sensor/humidity
+
+        config APP_OBSERVE_FALLBACK_PATHS
+            string "Ressources de repli si les precedentes n'existent pas (4.04)"
+            default "/sensor/temperature,/sensor/humidity"
+            help
+                Utilisees uniquement pour une carte qui repond 4.04 (Not Found) a l'une
+                des ressources principales. Laisser vide pour desactiver.
+
+        config APP_OBSERVE_CONNECT_TIMEOUT_S
+            int "Delai max pour le handshake DTLS + premier abonnement (s)"
+            range 5 120
+            default 15
+
+        config APP_OBSERVE_STALE_S
+            int "Silence max d'un pair abonne avant reabonnement (s)"
+            range 10 600
+            default 20
+            help
+                Le serveur notifie a chaque mesure. Sans notification pendant ce delai,
+                la session est fermee et l'abonnement refait. Doit etre superieur
+                a 3 x la periode de mesure.
+
+        config APP_OBSERVE_MAX_BACKOFF_S
+            int "Delai max entre deux tentatives d'abonnement (s)"
+            range 2 120
+            default 30
+    endmenu
+
+    menu "Capteur"
+        config APP_SENSOR_PERIOD_S
+            int "Periode de mesure / notification Observe (s)"
+            range 1 600
+            default 5
+
+        choice APP_SENSOR_TYPE
+            prompt "Type de capteur branche sur cette carte"
+            default APP_SENSOR_SIMULATED
+            config APP_SENSOR_SIMULATED
+                bool "Simule (aucun materiel requis)"
+            config APP_SENSOR_BMP280
+                bool "BMP280 (I2C) : temperature + pression"
+            config APP_SENSOR_DHT11
+                bool "DHT11 : temperature + humidite"
+            config APP_SENSOR_DHT22
+                bool "DHT22 / AM2302 : temperature + humidite"
+            config APP_SENSOR_PIR
+                bool "PIR / capteur numerique (0/1) : mouvement"
+            config APP_SENSOR_ANALOG
+                bool "Analogique (MQ135, LDR, potentiometre...)"
+        endchoice
+
+        config APP_SENSOR_I2C_SDA
+            int "GPIO SDA (I2C)"
+            depends on APP_SENSOR_BMP280
+            default 21
+        config APP_SENSOR_I2C_SCL
+            int "GPIO SCL (I2C)"
+            depends on APP_SENSOR_BMP280
+            default 22
+
+        config APP_SENSOR_DHT_GPIO
+            int "GPIO DATA du DHT"
+            depends on APP_SENSOR_DHT11 || APP_SENSOR_DHT22
+            default 4
+
+        config APP_SENSOR_PIR_GPIO
+            int "GPIO de sortie du PIR"
+            depends on APP_SENSOR_PIR
+            default 27
+            help
+                Un changement d'etat (mouvement detecte / fini) est publie
+                immediatement, sans attendre la periode de mesure.
+
+        config APP_SENSOR_ANALOG_GPIO
+            int "GPIO analogique (ADC1 uniquement : 32 a 39 sur ESP32)"
+            depends on APP_SENSOR_ANALOG
+            default 34
+            help
+                L'ADC2 est inutilisable quand le Wi-Fi est actif : choisir un GPIO de l'ADC1.
+        config APP_SENSOR_ANALOG_NAME
+            string "Nom de la grandeur publiee"
+            depends on APP_SENSOR_ANALOG
+            default "air_quality"
+            help
+                Nom (sans espace) utilise dans le JSON et dans la ressource /sensor/<nom>.
+                Exemples : air_quality (MQ135), light (LDR), level (potentiometre).
+    endmenu
+
+    menu "Actionneur (commande depuis la page HTML)"
+        config APP_ACTUATOR_NAME
+            string "Nom de l'actionneur (affiche sur la page)"
+            default "LED"
+            help
+                Exemples : LED, Relais, Buzzer, Ventilateur...
+
+        config APP_ACTUATOR_GPIO
+            int "GPIO de l'actionneur (sortie numerique ON/OFF)"
+            range 0 33
+            default 26
+            help
+                LED externe (avec resistance 220 ohms), module relais ou buzzer ACTIF.
+                Eviter le GPIO de la LED de reception (APP_LED_GPIO, 2 par defaut)
+                qui clignote a chaque donnee CoAP recue.
+
+        config APP_ACTUATOR_ACTIVE_LOW
+            bool "Actionneur actif a l'etat bas (certains modules relais)"
+            default n
+    endmenu
+
+    menu "LED"
+        config APP_LED_GPIO
+            int "GPIO de la LED"
+            range 0 48
+            default 2
+            help
+                GPIO 2 = LED bleue integree sur la plupart des cartes ESP32 DevKit.
+
+        config APP_LED_ACTIVE_LOW
+            bool "LED active a l'etat bas"
+            default n
+
+        config APP_LED_ON_MS
+            int "Duree d'allumage a chaque reception (ms)"
+            range 50 5000
+            default 500
+    endmenu
+
+endmenu

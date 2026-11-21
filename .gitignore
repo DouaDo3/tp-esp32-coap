@@ -1,0 +1,20 @@
+# --- Secrets : ne JAMAIS publier ---
+.env
+**/flows_cred.json
+# sdkconfig genere par ESP-IDF : contient le Wi-Fi reel de la personne qui compile
+firmware/sdkconfig
+firmware/sdkconfig.*
+!firmware/sdkconfig.defaults
+
+# --- Fichiers generes (recrees automatiquement) ---
+firmware/build*/
+firmware/managed_components/
+dist/
+*.log
+__pycache__/
+*.pyc
+
+# --- Divers ---
+.vscode/
+*.bak
+*_bak

@@ -1,0 +1,6 @@
+## Dépendances gérées par l'IDF Component Manager (téléchargées dans managed_components/)
+dependencies:
+  idf: ">=5.0"
+  espressif/mdns: "^1.15.1"      # Découverte automatique (Multicast DNS / DNS-SD)
+  espressif/coap: "4.3.5~8"      # libcoap 4.3.5 : CoAP + Observe + DTLS via mbedTLS
+  espressif/mesh_lite: "1.0.2"    # ESP-Mesh-Lite : réseau maillé Wi-Fi (racine + enfants)

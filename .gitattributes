@@ -1,0 +1,8 @@
+# Fichiers utilises dans les conteneurs Linux : toujours en fin de ligne LF (meme sous Windows)
+*.sh text eol=lf
+docker/** text eol=lf
+docker-compose.yml text eol=lf
+# Scripts Windows
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.bin binary

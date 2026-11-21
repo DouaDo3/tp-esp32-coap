@@ -1,0 +1,60 @@
+# ---------- Cible / mémoire ----------
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+
+# ---------- mbedTLS : DTLS + PSK (requis pour CoAPS) ----------
+CONFIG_MBEDTLS_SSL_PROTO_DTLS=y
+CONFIG_MBEDTLS_PSK_MODES=y
+CONFIG_MBEDTLS_KEY_EXCHANGE_PSK=y
+# Tampons TLS réduits : messages CoAP courts, plusieurs sessions DTLS simultanées
+CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN=y
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=2048
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=2048
+
+# ---------- libcoap ----------
+CONFIG_COAP_MBEDTLS_PSK=y
+CONFIG_COAP_SERVER_SUPPORT=y
+CONFIG_COAP_CLIENT_SUPPORT=y
+
+# ---------- mDNS ----------
+CONFIG_MDNS_MAX_SERVICES=4
+
+# ---------- FreeRTOS ----------
+CONFIG_FREERTOS_HZ=1000
+
+# ---------- lwIP : 1 socket UDP par pair observe (+ serveur, mDNS...) ----------
+CONFIG_LWIP_MAX_SOCKETS=20
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=16
+
+# ---------- ESP-Mesh-Lite / iot_bridge ----------
+# Pas d'Ethernet : seul le pont Wi-Fi STA (vers le parent) -> SoftAP (vers les enfants) est utilisé
+# CONFIG_BRIDGE_ETHERNET_NETIF_ENABLE is not set
+CONFIG_BRIDGE_EXTERNAL_NETIF_STATION=y
+CONFIG_BRIDGE_DATA_FORWARDING_NETIF_SOFTAP=y
+CONFIG_MESH_LITE_ENABLE=y
+# Reseau Wi-Fi du mesh (SoftAP de chaque noeud) : IDENTIQUE sur toutes les cartes
+CONFIG_BRIDGE_SOFTAP_SSID="CoAPS_Mesh"
+CONFIG_BRIDGE_SOFTAP_PASSWORD="coaps-mesh-2026"
+CONFIG_APP_MESH_ENABLE=y
+
+# Mesh-Lite : pile du timer FreeRTOS trop petite par defaut (stack overflow "Tmr Svc" vu le 2026-11-21)
+CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=4096
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+
+# ---------- KIT TP (identique pour tous) ----------
+# Point d'acces Windows commun : le PC qui partage sa connexion a TOUJOURS l'IP 192.168.137.1
+CONFIG_APP_WIFI_SSID="TP-ESP32"
+CONFIG_APP_WIFI_PASSWORD="coap2026tp"
+CONFIG_APP_MQTT_ENABLE=y
+CONFIG_APP_MQTT_BROKER_URI="mqtt://192.168.137.1:1883"
+CONFIG_APP_MQTT_TOPIC_PREFIX="tp"
+CONFIG_APP_STATIC_PEERS=""
+CONFIG_APP_OBSERVE_PATHS="/sensor"
+CONFIG_APP_OBSERVE_FALLBACK_PATHS="/sensor/data"
+# Actionneur sur D2 (LED bleue integree sur certaines cartes, LED externe sinon)
+CONFIG_APP_ACTUATOR_NAME="LED"
+CONFIG_APP_ACTUATOR_GPIO=2
+# LED de notification CoAP deplacee pour ne pas melanger avec l'actionneur
+CONFIG_APP_LED_GPIO=25
+# Capteur par defaut : simule (les variantes sont dans sensors/)
+CONFIG_APP_SENSOR_SIMULATED=y
