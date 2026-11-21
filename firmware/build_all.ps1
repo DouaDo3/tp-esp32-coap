@@ -6,7 +6,8 @@
 #   . 'C:\Espressif\tools\Microsoft.v5.5.6.PowerShell_profile.ps1'   # active ESP-IDF
 #   .\build_all.ps1                 # les 5 variantes
 #   .\build_all.ps1 simule pir      # seulement certaines
-param([string[]]$Capteurs = @('simule', 'bmp280', 'dht11', 'pir', 'analog'))
+param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Capteurs)
+if (-not $Capteurs) { $Capteurs = @('simule', 'bmp280', 'dht11', 'pir', 'analog') }
 
 # 'Continue' : sous PowerShell 5.1, les avertissements ecrits sur stderr par idf.py
 # ne doivent pas arreter le script ; on teste $LASTEXITCODE a la place.
