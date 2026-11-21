@@ -102,7 +102,6 @@ New-NetFirewallRule -DisplayName "TP ESP32 MQTT" -Direction Inbound -Protocol TC
    | BMP280 / BME280 | `tp_bmp280.bin` | SDA → 21, SCL → 22, VCC → 3V3, GND → GND |
    | DHT11 | `tp_dht11.bin` | DATA → 4, VCC → 3V3, GND → GND |
    | PIR (HC-SR501) | `tp_pir.bin` | OUT → 27, VCC → 5V (VIN), GND → GND |
-   | MQ135 / LDR / potentiomètre | `tp_analog.bin` | sortie analogique → 34 |
    | **Actionneur (tous)** | | **LED : D2 → résistance 220 Ω → patte longue ; patte courte → GND** |
 
 2. Brancher la carte en USB. Si aucun port COM n'apparaît, installer le pilote de la puce USB de la carte : **CP210x** (<https://www.silabs.com/developer-tools/usb-to-uart-bridge-vcp-drivers>) ou **CH340 / CH9102** (<https://www.wch-ic.com/downloads/CH341SER_EXE.html>).
@@ -161,7 +160,7 @@ Prérequis : **ESP-IDF 5.5.6** (installateur Windows d'Espressif), projet dans u
 ```powershell
 cd firmware
 . 'C:\Espressif\tools\Microsoft.v5.5.6.PowerShell_profile.ps1'   # active ESP-IDF
-.\build_all.ps1              # les 5 variantes -> dist\tp_<capteur>.bin
+.\build_all.ps1              # les 4 variantes -> dist\tp_<capteur>.bin
 .\build_all.ps1 simule       # une seule variante
 ```
 
