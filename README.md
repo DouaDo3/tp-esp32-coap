@@ -15,7 +15,7 @@ Le PC fait tourner **Mosquitto** et **Node-RED** dans **Docker**. Les cartes re�
 - Un PC **Windows 10 ou 11** avec le **Wi-Fi**
 - Une carte **ESP32** + un câble USB **de données** (certains câbles servent seulement à charger)
 - **Google Chrome** ou **Microsoft Edge**
-- Facultatif : un capteur (BMP280, DHT11, DHT22, PIR, MQ135...) et une LED + une résistance de 220 Ω
+- Facultatif : un capteur (BMP280, DHT11, PIR, MQ135...) et une LED + une résistance de 220 Ω
 
 ## 1. Installer Docker Desktop (une seule fois)
 
@@ -101,7 +101,6 @@ New-NetFirewallRule -DisplayName "TP ESP32 MQTT" -Direction Inbound -Protocol TC
    | Aucun (valeurs simulées) | `tp_simule.bin` | - |
    | BMP280 / BME280 | `tp_bmp280.bin` | SDA → 21, SCL → 22, VCC → 3V3, GND → GND |
    | DHT11 | `tp_dht11.bin` | DATA → 4, VCC → 3V3, GND → GND |
-   | DHT22 / AM2302 | `tp_dht22.bin` | DATA → 4, VCC → 3V3, GND → GND |
    | PIR (HC-SR501) | `tp_pir.bin` | OUT → 27, VCC → 5V (VIN), GND → GND |
    | MQ135 / LDR / potentiomètre | `tp_analog.bin` | sortie analogique → 34 |
    | **Actionneur (tous)** | | **LED : D2 → résistance 220 Ω → patte longue ; patte courte → GND** |
@@ -162,7 +161,7 @@ Prérequis : **ESP-IDF 5.5.6** (installateur Windows d'Espressif), projet dans u
 ```powershell
 cd firmware
 . 'C:\Espressif\tools\Microsoft.v5.5.6.PowerShell_profile.ps1'   # active ESP-IDF
-.\build_all.ps1              # les 6 variantes -> dist\tp_<capteur>.bin
+.\build_all.ps1              # les 5 variantes -> dist\tp_<capteur>.bin
 .\build_all.ps1 simule       # une seule variante
 ```
 

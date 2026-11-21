@@ -1,12 +1,12 @@
-# Compile les 6 variantes du firmware (une par capteur) et produit un .bin unique par variante
+# Compile les 5 variantes du firmware (une par capteur) et produit un .bin unique par variante
 # dans ..\dist\tp_<capteur>.bin, a flasher a l'adresse 0x0 (esptool-js dans Chrome).
 #
 # Prerequis : ESP-IDF 5.5.6 installe (installateur Windows d'Espressif).
 # Usage (PowerShell, dans le dossier firmware) :
 #   . 'C:\Espressif\tools\Microsoft.v5.5.6.PowerShell_profile.ps1'   # active ESP-IDF
-#   .\build_all.ps1                 # les 6 variantes
+#   .\build_all.ps1                 # les 5 variantes
 #   .\build_all.ps1 simule pir      # seulement certaines
-param([string[]]$Capteurs = @('simule', 'bmp280', 'dht11', 'dht22', 'pir', 'analog'))
+param([string[]]$Capteurs = @('simule', 'bmp280', 'dht11', 'pir', 'analog'))
 
 # 'Continue' : sous PowerShell 5.1, les avertissements ecrits sur stderr par idf.py
 # ne doivent pas arreter le script ; on teste $LASTEXITCODE a la place.
