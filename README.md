@@ -27,7 +27,10 @@ Le PC fait tourner **Mosquitto** et **Node-RED** dans **Docker**. Les cartes re�
 
 ## 2. Télécharger le projet
 
-- Bouton vert **Code → Download ZIP**, puis extraire, **ou** `git clone` du dépôt.
+- <https://github.com/DouaDo3/tp-esp32-coap> → bouton vert **Code → Download ZIP**, puis extraire, **ou** :
+  ```
+  git clone https://github.com/DouaDo3/tp-esp32-coap.git
+  ```
 - Mettre le dossier dans un **chemin court**, par exemple `C:\tp-esp32-coap`. Éviter le Bureau et OneDrive.
 
 ## 3. MongoDB Atlas (facultatif : sans Atlas, tout le reste fonctionne)
@@ -91,7 +94,7 @@ New-NetFirewallRule -DisplayName "TP ESP32 MQTT" -Direction Inbound -Protocol TC
 
 ## 7. Flasher la carte ESP32
 
-1. Dans **Releases** (colonne de droite de la page GitHub), télécharger **le fichier qui correspond à votre capteur** :
+1. Télécharger **le fichier qui correspond à votre capteur** sur la page des firmwares : **<https://github.com/DouaDo3/tp-esp32-coap/releases/latest>** (section *Assets*) :
 
    | Capteur | Fichier | Branchement |
    |---|---|---|
